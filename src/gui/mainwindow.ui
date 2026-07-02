@@ -170,7 +170,7 @@
    <addaction name="actionDecreaseQueuePos"/>
    <addaction name="actionBottomQueuePos"/>
    <addaction name="separator"/>
-   <addaction name="actionSearchWidget"/>
+   <addaction name="actionOpenSearch"/>
    <addaction name="actionCreateTorrent"/>
    <addaction name="separator"/>
    <addaction name="actionOptions"/>
@@ -355,6 +355,14 @@
    </property>
    <property name="text">
     <string>Search &amp;Engine</string>
+   </property>
+  </action>
+  <action name="actionOpenSearch">
+   <property name="text">
+    <string>Search</string>
+   </property>
+   <property name="toolTip">
+    <string>Open the search tab</string>
    </property>
   </action>
   <action name="actionLock">

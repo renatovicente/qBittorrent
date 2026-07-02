@@ -197,6 +197,8 @@ MainWindow::MainWindow(IGUIApplication *app, const WindowState initialState, con
     m_ui->actionCheckForUpdates->setIcon(UIThemeManager::instance()->getIcon(u"view-refresh"_s));
     m_ui->actionOpenDestinationFolder->setIcon(UIThemeManager::instance()->getIcon(u"directory"_s));
     m_ui->actionSearchWidget->setIcon(UIThemeManager::instance()->getIcon(u"edit-find"_s, u"system-search"_s));
+    m_ui->actionOpenSearch->setIcon(UIThemeManager::instance()->getIcon(u"edit-find"_s, u"system-search"_s));
+    connect(m_ui->actionOpenSearch, &QAction::triggered, this, qOverload<>(&MainWindow::displaySearchTab));
 
     m_ui->actionPauseSession->setVisible(!BitTorrent::Session::instance()->isPaused());
     m_ui->actionResumeSession->setVisible(BitTorrent::Session::instance()->isPaused());
