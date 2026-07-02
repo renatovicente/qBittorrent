@@ -170,6 +170,7 @@
    <addaction name="actionDecreaseQueuePos"/>
    <addaction name="actionBottomQueuePos"/>
    <addaction name="separator"/>
+   <addaction name="actionSearchWidget"/>
    <addaction name="actionCreateTorrent"/>
    <addaction name="separator"/>
    <addaction name="actionOptions"/>
