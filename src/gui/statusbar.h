@@ -32,6 +32,7 @@
 
 class QLabel;
 class QPushButton;
+class QTimer;
 
 namespace BitTorrent
 {
@@ -62,6 +63,7 @@ private slots:
 private:
     void updateConnectionStatus();
     void updateDHTNodesNumber();
+    void updateNASTransferLabel();
     void updateFreeDiskSpaceLabel(qint64 value);
     void updateFreeDiskSpaceVisibility();
     void updateExternalAddressesLabel();
@@ -72,6 +74,9 @@ private:
     QPushButton *m_upSpeedLbl = nullptr;
     QLabel *m_freeDiskSpaceLbl = nullptr;
     QWidget *m_freeDiskSpaceSeparator = nullptr;
+    QLabel *m_nasTransferLbl = nullptr;
+    QWidget *m_nasTransferSeparator = nullptr;
+    QTimer *m_nasTransferTimer = nullptr;
     QLabel *m_lastExternalIPsLbl = nullptr;
     QWidget *m_lastExternalIPsSeparator = nullptr;
     QLabel *m_DHTLbl = nullptr;

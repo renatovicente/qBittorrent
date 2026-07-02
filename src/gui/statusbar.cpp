@@ -28,10 +28,16 @@
 
 #include "statusbar.h"
 
+#include <QDateTime>
+#include <QDir>
+#include <QFile>
 #include <QFrame>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QLabel>
 #include <QPushButton>
 #include <QStyle>
+#include <QTimer>
 
 #include "base/bittorrent/session.h"
 #include "base/bittorrent/sessionstatus.h"
@@ -97,6 +103,15 @@ StatusBar::StatusBar(QWidget *parent)
     m_freeDiskSpaceLbl->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
     m_freeDiskSpaceSeparator = createSeparator(this);
 
+    m_nasTransferLbl = new QLabel(this);
+    m_nasTransferLbl->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+    m_nasTransferLbl->setVisible(false);
+    m_nasTransferSeparator = createSeparator(this);
+    m_nasTransferSeparator->setVisible(false);
+    m_nasTransferTimer = new QTimer(this);
+    connect(m_nasTransferTimer, &QTimer::timeout, this, &StatusBar::updateNASTransferLabel);
+    m_nasTransferTimer->start(3000);
+
     m_lastExternalIPsLbl = new QLabel(tr("External IP: N/A"));
     m_lastExternalIPsLbl->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
     m_lastExternalIPsSeparator = createSeparator(this);
@@ -125,6 +140,8 @@ StatusBar::StatusBar(QWidget *parent)
     m_upSpeedLbl->setIconSize(smallIconSize);
     m_altSpeedsBtn->setIconSize({midIconSize.width(), smallIconSize.height()});
 
+    addPermanentWidget(m_nasTransferLbl);
+    addPermanentWidget(m_nasTransferSeparator);
     addPermanentWidget(m_freeDiskSpaceLbl);
     addPermanentWidget(m_freeDiskSpaceSeparator);
     addPermanentWidget(m_lastExternalIPsLbl);
@@ -142,6 +159,7 @@ StatusBar::StatusBar(QWidget *parent)
     updateExternalAddressesVisibility();
 
     refresh();
+    updateNASTransferLabel();
     connect(session, &BitTorrent::Session::statsUpdated, this, &StatusBar::refresh);
 
     updateFreeDiskSpaceVisibility();
@@ -208,6 +226,57 @@ void StatusBar::updateDHTNodesNumber()
         m_DHTLbl->setVisible(false);
         m_DHTSeparator->setVisible(false);
     }
+}
+
+void StatusBar::updateNASTransferLabel()
+{
+    // Fed by the NAS transfer hook script, which maintains this status file
+    const QString statusPath = QDir::homePath() + u"/.config/qbt/nas-transfer-status.json"_s;
+
+    bool visible = false;
+    QFile file {statusPath};
+    if (file.open(QIODevice::ReadOnly))
+    {
+        const QJsonObject obj = QJsonDocument::fromJson(file.readAll()).object();
+        const QString state = obj[u"state"_s].toString();
+        const qint64 updatedAt = obj[u"updated_at"_s].toInteger();
+        const qint64 age = QDateTime::currentSecsSinceEpoch() - updatedAt;
+        const bool isFresh = (age < 120);
+
+        if ((state == u"transferring"_s) && isFresh)
+        {
+            const QString name = obj[u"name"_s].toString();
+            const qint64 total = obj[u"total_bytes"_s].toInteger();
+            const qint64 transferred = obj[u"transferred_bytes"_s].toInteger();
+            const qint64 speed = obj[u"speed_bps"_s].toInteger();
+
+            const int pct = (total > 0) ? static_cast<int>((transferred * 100) / total) : 0;
+            QString shortName = name;
+            if (shortName.length() > 32)
+                shortName = shortName.left(31) + u'…';
+
+            QString text = tr("NAS: %1 — %2%").arg(shortName).arg(pct);
+            if (speed > 0)
+            {
+                const qint64 eta = (total - transferred) / speed;
+                text += u" (%1, ETA %2)"_s.arg(Utils::Misc::friendlyUnit(speed, true)
+                        , Utils::Misc::userFriendlyDuration(eta));
+            }
+            m_nasTransferLbl->setText(text);
+            m_nasTransferLbl->setToolTip(tr("Transferring \"%1\" to NAS: %2 of %3")
+                    .arg(name, Utils::Misc::friendlyUnit(transferred), Utils::Misc::friendlyUnit(total)));
+            visible = true;
+        }
+        else if ((state == u"error"_s) && (age < 3600))
+        {
+            m_nasTransferLbl->setText(tr("NAS: transfer failed — see log"));
+            m_nasTransferLbl->setToolTip(u"~/Library/Logs/qbt-nas-transfer.log"_s);
+            visible = true;
+        }
+    }
+
+    m_nasTransferLbl->setVisible(visible);
+    m_nasTransferSeparator->setVisible(visible);
 }
 
 void StatusBar::updateFreeDiskSpaceLabel(const qint64 value)
