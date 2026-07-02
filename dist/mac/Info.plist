@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleDisplayName</key>
-	<string>qBittorrent</string>
+	<string>qBittorrent rv1.0.1</string>
 	<key>CFBundleDocumentTypes</key>
 	<array>
 		<dict>
@@ -71,7 +71,7 @@
 		</dict>
 	</array>
 	<key>CFBundleName</key>
-	<string>qBittorrent</string>
+	<string>qBittorrent rv1.0.1</string>
 	<key>CFBundleIconFile</key>
 	<string>qbittorrent_mac.icns</string>
 	<key>CFBundleInfoDictionaryVersion</key>
