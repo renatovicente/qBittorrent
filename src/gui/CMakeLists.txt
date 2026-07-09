@@ -71,6 +71,7 @@ add_library(qbt_gui STATIC
     log/loglistview.h
     log/logmodel.h
     mainwindow.h
+    nastransferlogdialog.h
     optionsdialog.h
     plugins/pluginsdialog.h
     powermanagement/inhibitor.h
@@ -178,6 +179,7 @@ add_library(qbt_gui STATIC
     log/loglistview.cpp
     log/logmodel.cpp
     mainwindow.cpp
+    nastransferlogdialog.cpp
     optionsdialog.cpp
     plugins/pluginsdialog.cpp
     powermanagement/inhibitor.cpp

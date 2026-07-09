@@ -87,6 +87,7 @@
 #include "hidabletabwidget.h"
 #include "interfaces/iguiapplication.h"
 #include "lineedit.h"
+#include "nastransferlogdialog.h"
 #include "optionsdialog.h"
 #include "plugins/pluginsdialog.h"
 #include "powermanagement/powermanagement.h"
@@ -368,14 +369,9 @@ MainWindow::MainWindow(IGUIApplication *app, const WindowState initialState, con
     connect(m_ui->actionManagePlugins, &QAction::triggered, this, &MainWindow::managePlugins);
     connect(m_ui->actionNasTransferLog, &QAction::triggered, this, [this]
     {
-        const QString ledgerPath = QDir::homePath() + u"/Library/Logs/qbt-nas-transfers.csv"_s;
-        if (!QFileInfo::exists(ledgerPath))
-        {
-            QMessageBox::information(this, tr("NAS Transfer Log")
-                    , tr("No transfers have been logged yet.\nThe log is created after the first torrent is copied to the NAS."));
-            return;
-        }
-        QDesktopServices::openUrl(QUrl::fromLocalFile(ledgerPath));
+        auto *dlg = new NasTransferLogDialog(this);
+        dlg->setAttribute(Qt::WA_DeleteOnClose);
+        dlg->open();
     });
 
     // Initialise system sleep inhibition timer
