@@ -42,7 +42,9 @@
 #include <QComboBox>
 #include <QDebug>
 #include <QDesktopServices>
+#include <QDir>
 #include <QFileDialog>
+#include <QFileInfo>
 #include <QFileSystemWatcher>
 #include <QLabel>
 #include <QMenu>
@@ -364,6 +366,17 @@ MainWindow::MainWindow(IGUIApplication *app, const WindowState initialState, con
 
     connect(m_ui->actionManageCookies, &QAction::triggered, this, &MainWindow::manageCookies);
     connect(m_ui->actionManagePlugins, &QAction::triggered, this, &MainWindow::managePlugins);
+    connect(m_ui->actionNasTransferLog, &QAction::triggered, this, [this]
+    {
+        const QString ledgerPath = QDir::homePath() + u"/Library/Logs/qbt-nas-transfers.csv"_s;
+        if (!QFileInfo::exists(ledgerPath))
+        {
+            QMessageBox::information(this, tr("NAS Transfer Log")
+                    , tr("No transfers have been logged yet.\nThe log is created after the first torrent is copied to the NAS."));
+            return;
+        }
+        QDesktopServices::openUrl(QUrl::fromLocalFile(ledgerPath));
+    });
 
     // Initialise system sleep inhibition timer
     m_preventTimer->setSingleShot(true);

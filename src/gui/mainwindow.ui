@@ -81,6 +81,8 @@
     </widget>
     <addaction name="actionCreateTorrent"/>
     <addaction name="separator"/>
+    <addaction name="actionNasTransferLog"/>
+    <addaction name="separator"/>
     <addaction name="actionManageCookies"/>
     <addaction name="actionOptions"/>
     <addaction name="separator"/>
@@ -461,6 +463,14 @@
    </property>
    <property name="toolTip">
     <string>Manage stored network cookies</string>
+   </property>
+  </action>
+  <action name="actionNasTransferLog">
+   <property name="text">
+    <string>NAS Transfer Log...</string>
+   </property>
+   <property name="toolTip">
+    <string>Open the CSV log of torrents copied to the NAS (date, size, destination)</string>
    </property>
   </action>
   <action name="actionExecutionLogs">
