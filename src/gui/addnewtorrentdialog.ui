@@ -172,8 +172,15 @@
              <property name="checked">
               <bool>true</bool>
              </property>
-             <layout class="QVBoxLayout" name="verticalLayoutNas">
-              <item>
+             <layout class="QGridLayout" name="gridLayoutNas">
+              <item row="0" column="0">
+               <widget class="QLabel" name="labelNasFolder">
+                <property name="text">
+                 <string>Destination:</string>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="1">
                <widget class="QComboBox" name="nasFolderComboBox">
                 <property name="editable">
                  <bool>true</bool>
@@ -181,8 +188,41 @@
                 <property name="insertPolicy">
                  <enum>QComboBox::InsertPolicy::NoInsert</enum>
                 </property>
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
                 <property name="toolTip">
-                 <string>Destination directory on the NAS (e.g. /volume1/video/Documentaries). The finished torrent is copied here, then removed locally.</string>
+                 <string>Parent directory on the NAS (e.g. /volume1/video). The finished torrent is copied here, then removed locally.</string>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="2">
+               <widget class="QPushButton" name="nasNewFolderButton">
+                <property name="text">
+                 <string>New folder…</string>
+                </property>
+                <property name="toolTip">
+                 <string>Append a new subfolder to the destination. It is created on the NAS when the transfer runs.</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="0">
+               <widget class="QLabel" name="labelNasRename">
+                <property name="text">
+                 <string>Arrives as:</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="1" colspan="2">
+               <widget class="QLineEdit" name="nasRenameLineEdit">
+                <property name="toolTip">
+                 <string>Rename the arriving folder on the NAS. Leave as-is to keep the torrent's original folder name.</string>
+                </property>
+                <property name="clearButtonEnabled">
+                 <bool>true</bool>
                 </property>
                </widget>
               </item>

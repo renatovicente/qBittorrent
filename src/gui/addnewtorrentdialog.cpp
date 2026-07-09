@@ -41,6 +41,7 @@
 #include <QFile>
 #include <QFileDialog>
 #include <QFuture>
+#include <QInputDialog>
 #include <QSaveFile>
 #include <QList>
 #include <QMenu>
@@ -248,6 +249,21 @@ AddNewTorrentDialog::AddNewTorrentDialog(const BitTorrent::TorrentDescriptor &to
         m_ui->nasFolderComboBox->addItems(nasHistory);
         m_ui->nasFolderComboBox->setCurrentIndex(0);
     }
+    connect(m_ui->nasNewFolderButton, &QPushButton::clicked, this, [this]
+    {
+        bool ok = false;
+        const QString name = QInputDialog::getText(this, tr("New NAS subfolder")
+                , tr("Subfolder name (created on the NAS when the transfer runs):")
+                , QLineEdit::Normal, {}, &ok).trimmed();
+        if (!ok || name.isEmpty())
+            return;
+        QString parent = m_ui->nasFolderComboBox->currentText().trimmed();
+        while (parent.endsWith(u'/'))
+            parent.chop(1);
+        const QString combined = parent.isEmpty() ? name : (parent + u'/' + name);
+        m_ui->nasFolderComboBox->insertItem(0, combined);
+        m_ui->nasFolderComboBox->setCurrentIndex(0);
+    });
 
     if (const QByteArray state = m_storeTreeHeaderState; !state.isEmpty())
         m_ui->contentTreeView->header()->restoreState(state);
@@ -398,6 +414,10 @@ void AddNewTorrentDialog::setCurrentContext(const std::shared_ptr<Context> conte
     const BitTorrent::InfoHash infoHash = torrentDescr.infoHash();
     const bool hasMetadata = torrentDescr.info().has_value();
 
+    // Prefill the NAS "arrives as" field with the torrent's folder name
+    if (m_ui->nasRenameLineEdit->text().isEmpty() && !torrentDescr.name().isEmpty())
+        m_ui->nasRenameLineEdit->setText(torrentDescr.name());
+
     if (hasMetadata)
         m_ui->stopConditionComboBox->removeItem(m_ui->stopConditionComboBox->findData(QVariant::fromValue(BitTorrent::Torrent::StopCondition::MetadataReceived)));
     else
@@ -505,7 +525,9 @@ void AddNewTorrentDialog::saveNasDestination()
     if (!m_ui->groupBoxNasPath->isChecked())
         return;
 
-    const QString nasFolder = m_ui->nasFolderComboBox->currentText().trimmed();
+    QString nasFolder = m_ui->nasFolderComboBox->currentText().trimmed();
+    while (nasFolder.endsWith(u'/'))
+        nasFolder.chop(1);
     if (nasFolder.isEmpty())
         return;
 
@@ -516,6 +538,14 @@ void AddNewTorrentDialog::saveNasDestination()
         history.prepend(nasFolder);
         settings()->storeValue(KEY_NASFOLDERHISTORY, history.mid(0, 20));
     }
+
+    // Optional rename of the arriving folder: only when it differs from the
+    // torrent's original name (keeps single-file torrents untouched by default).
+    QString rename = m_ui->nasRenameLineEdit->text().trimmed();
+    if (rename == m_currentContext->torrentDescr.name())
+        rename.clear();
+    // guard against path separators sneaking into a leaf name
+    rename.replace(u'/', u'_');
 
     const BitTorrent::InfoHash infoHash = m_currentContext->torrentDescr.infoHash();
     QStringList keys;
@@ -543,8 +573,10 @@ void AddNewTorrentDialog::saveNasDestination()
                 lines.append(line);
         }
     }
+    // format: hash=<parent dir>[<TAB><rename leaf>]
+    const QString value = rename.isEmpty() ? nasFolder : (nasFolder + u'\t' + rename);
     for (const QString &key : asConst(keys))
-        lines.append(key + u'=' + nasFolder);
+        lines.append(key + u'=' + value);
 
     if (QSaveFile out {mapPath}; out.open(QIODevice::WriteOnly | QIODevice::Text))
     {
