@@ -81,6 +81,7 @@
     </widget>
     <addaction name="actionCreateTorrent"/>
     <addaction name="separator"/>
+    <addaction name="actionSearchBooks"/>
     <addaction name="actionNasTransferLog"/>
     <addaction name="separator"/>
     <addaction name="actionManageCookies"/>
@@ -463,6 +464,14 @@
    </property>
    <property name="toolTip">
     <string>Manage stored network cookies</string>
+   </property>
+  </action>
+  <action name="actionSearchBooks">
+   <property name="text">
+    <string>Search Books (LibGen)...</string>
+   </property>
+   <property name="toolTip">
+    <string>Search and download ebooks from LibGen, sent to a NAS folder</string>
    </property>
   </action>
   <action name="actionNasTransferLog">

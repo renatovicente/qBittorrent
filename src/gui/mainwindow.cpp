@@ -86,6 +86,7 @@
 #include "executionlogwidget.h"
 #include "hidabletabwidget.h"
 #include "interfaces/iguiapplication.h"
+#include "booksearchdialog.h"
 #include "lineedit.h"
 #include "nastransferlogdialog.h"
 #include "optionsdialog.h"
@@ -372,6 +373,12 @@ MainWindow::MainWindow(IGUIApplication *app, const WindowState initialState, con
         auto *dlg = new NasTransferLogDialog(this);
         dlg->setAttribute(Qt::WA_DeleteOnClose);
         dlg->open();
+    });
+    connect(m_ui->actionSearchBooks, &QAction::triggered, this, [this]
+    {
+        auto *dlg = new BookSearchDialog(this);
+        dlg->setAttribute(Qt::WA_DeleteOnClose);
+        dlg->show();
     });
 
     // Initialise system sleep inhibition timer
