@@ -46,4 +46,7 @@ private:
     QProcess *m_proc = nullptr;
     QByteArray m_procOut;
     QString m_pendingDownloadName; // label for the download in progress
+    QString m_pendingAuthor;
+    QString m_pendingFormat;
+    QString m_pendingMd5;
 };

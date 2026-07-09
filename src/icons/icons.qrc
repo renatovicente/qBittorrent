@@ -2,6 +2,7 @@
     <qresource prefix="/icons">
         <file>application-exit.svg</file>
         <file>application-rss.svg</file>
+        <file>book.svg</file>
         <file>application-url.svg</file>
         <file>browser-cookies.svg</file>
         <file>chart-line.svg</file>

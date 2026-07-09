@@ -86,6 +86,7 @@
 #include "executionlogwidget.h"
 #include "hidabletabwidget.h"
 #include "interfaces/iguiapplication.h"
+#include "booklogdialog.h"
 #include "booksearchdialog.h"
 #include "lineedit.h"
 #include "nastransferlogdialog.h"
@@ -202,6 +203,7 @@ MainWindow::MainWindow(IGUIApplication *app, const WindowState initialState, con
     m_ui->actionOpenDestinationFolder->setIcon(UIThemeManager::instance()->getIcon(u"directory"_s));
     m_ui->actionSearchWidget->setIcon(UIThemeManager::instance()->getIcon(u"edit-find"_s, u"system-search"_s));
     m_ui->actionOpenSearch->setIcon(UIThemeManager::instance()->getIcon(u"edit-find"_s, u"system-search"_s));
+    m_ui->actionSearchBooks->setIcon(UIThemeManager::instance()->getIcon(u"book"_s));
     connect(m_ui->actionOpenSearch, &QAction::triggered, this, qOverload<>(&MainWindow::displaySearchTab));
 
     m_ui->actionPauseSession->setVisible(!BitTorrent::Session::instance()->isPaused());
@@ -379,6 +381,12 @@ MainWindow::MainWindow(IGUIApplication *app, const WindowState initialState, con
         auto *dlg = new BookSearchDialog(this);
         dlg->setAttribute(Qt::WA_DeleteOnClose);
         dlg->show();
+    });
+    connect(m_ui->actionBookLog, &QAction::triggered, this, [this]
+    {
+        auto *dlg = new BookLogDialog(this);
+        dlg->setAttribute(Qt::WA_DeleteOnClose);
+        dlg->open();
     });
 
     // Initialise system sleep inhibition timer

@@ -82,6 +82,7 @@
     <addaction name="actionCreateTorrent"/>
     <addaction name="separator"/>
     <addaction name="actionSearchBooks"/>
+    <addaction name="actionBookLog"/>
     <addaction name="actionNasTransferLog"/>
     <addaction name="separator"/>
     <addaction name="actionManageCookies"/>
@@ -174,6 +175,7 @@
    <addaction name="actionBottomQueuePos"/>
    <addaction name="separator"/>
    <addaction name="actionOpenSearch"/>
+   <addaction name="actionSearchBooks"/>
    <addaction name="actionCreateTorrent"/>
    <addaction name="separator"/>
    <addaction name="actionOptions"/>
@@ -472,6 +474,14 @@
    </property>
    <property name="toolTip">
     <string>Search and download ebooks from LibGen, sent to a NAS folder</string>
+   </property>
+  </action>
+  <action name="actionBookLog">
+   <property name="text">
+    <string>Book Download Log...</string>
+   </property>
+   <property name="toolTip">
+    <string>Open the log of ebooks downloaded from LibGen</string>
    </property>
   </action>
   <action name="actionNasTransferLog">

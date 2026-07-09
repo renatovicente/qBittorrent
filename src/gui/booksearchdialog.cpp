@@ -6,8 +6,10 @@
 #include "booksearchdialog.h"
 
 #include <QComboBox>
+#include <QDateTime>
 #include <QDialogButtonBox>
 #include <QDir>
+#include <QFile>
 #include <QFileInfo>
 #include <QHBoxLayout>
 #include <QHeaderView>
@@ -20,12 +22,14 @@
 #include <QMessageBox>
 #include <QProcess>
 #include <QPushButton>
+#include <QStringList>
 #include <QTableWidget>
 #include <QTableWidgetItem>
 #include <QVBoxLayout>
 
 #include "base/global.h"
 #include "base/settingsstorage.h"
+#include "base/utils/misc.h"
 
 namespace
 {
@@ -33,6 +37,13 @@ namespace
     const QString DEFAULT_NAS_FOLDER = u"/volume1/video"_s;
 
     enum Column { COL_TITLE, COL_AUTHOR, COL_YEAR, COL_FORMAT, COL_SIZE, COL_COUNT };
+
+    QString csvField(const QString &value)
+    {
+        QString v = value;
+        v.replace(u'"', u"\"\""_s);
+        return u'"' + v + u'"';
+    }
 }
 
 BookSearchDialog::BookSearchDialog(QWidget *parent)
@@ -221,6 +232,9 @@ void BookSearchDialog::downloadSelected()
         return;
     const QString md5 = m_table->item(row, COL_TITLE)->data(Qt::UserRole).toString();
     m_pendingDownloadName = m_table->item(row, COL_TITLE)->text();
+    m_pendingAuthor = m_table->item(row, COL_AUTHOR) ? m_table->item(row, COL_AUTHOR)->text() : QString();
+    m_pendingFormat = m_table->item(row, COL_FORMAT) ? m_table->item(row, COL_FORMAT)->text() : QString();
+    m_pendingMd5 = md5;
     if (md5.isEmpty())
         return;
 
@@ -248,6 +262,8 @@ void BookSearchDialog::onDownloadFinished(const int /*exitCode*/)
     }
 
     const QString localPath = obj.value(u"path"_s).toString();
+    const QString filename = obj.value(u"filename"_s).toString();
+    const qint64 sizeBytes = static_cast<qint64>(obj.value(u"size"_s).toDouble());
 
     // Persist NAS folder history
     QString nasFolder = m_nasFolder->currentText().trimmed();
@@ -261,9 +277,28 @@ void BookSearchDialog::onDownloadFinished(const int /*exitCode*/)
         SettingsStorage::instance()->storeValue(KEY_NASFOLDERHISTORY, hist.mid(0, 20));
     }
 
+    const QString rename = m_rename->text().trimmed();
+    const QString nasDestination = nasFolder + u'/' + (rename.isEmpty() ? filename : rename);
+
+    // Dedicated book-download ledger (parallel to the NAS transfer log)
+    const QString bookLog = QDir::homePath() + u"/Library/Logs/qbt-books.csv"_s;
+    QDir().mkpath(QFileInfo(bookLog).absolutePath());
+    const bool newLog = !QFileInfo::exists(bookLog);
+    if (QFile f {bookLog}; f.open(QIODevice::Append | QIODevice::Text))
+    {
+        if (newLog)
+            f.write("datetime,title,author,format,size_bytes,size_human,md5,nas_destination\n");
+        const QString row = QStringList {
+            csvField(QDateTime::currentDateTime().toString(u"yyyy-MM-dd HH:mm:ss"_s)),
+            csvField(m_pendingDownloadName), csvField(m_pendingAuthor), csvField(m_pendingFormat),
+            QString::number(sizeBytes), csvField(Utils::Misc::friendlyUnit(sizeBytes)),
+            csvField(m_pendingMd5), csvField(nasDestination)
+        }.join(u',') + u'\n';
+        f.write(row.toUtf8());
+    }
+
     // Hand off to the detached NAS copy script (serializes with the torrent pipeline)
     const QString copyScript = QDir::homePath() + u"/.local/bin/qbt-nas-copy.sh"_s;
-    const QString rename = m_rename->text().trimmed();
     QProcess::startDetached(u"/bin/bash"_s,
             {copyScript, localPath, nasFolder, rename, m_pendingDownloadName});
 

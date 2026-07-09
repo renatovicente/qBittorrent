@@ -48,6 +48,7 @@ add_library(qbt_gui STATIC
     advancedsettings.h
     autoexpandabledialog.h
     banlistoptionsdialog.h
+    booklogdialog.h
     booksearchdialog.h
     color.h
     colorscheme.h
@@ -162,6 +163,7 @@ add_library(qbt_gui STATIC
     advancedsettings.cpp
     autoexpandabledialog.cpp
     banlistoptionsdialog.cpp
+    booklogdialog.cpp
     booksearchdialog.cpp
     cookiesdialog.cpp
     cookiesmodel.cpp
