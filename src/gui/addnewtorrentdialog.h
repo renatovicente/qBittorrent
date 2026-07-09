@@ -90,6 +90,7 @@ private:
 
     void setCurrentContext(std::shared_ptr<Context> context);
     void updateCurrentContext();
+    void saveNasDestination();
     void populateSavePaths();
     void loadState();
     void saveState();

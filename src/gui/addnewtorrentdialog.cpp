@@ -38,8 +38,10 @@
 #include <QDateTime>
 #include <QDebug>
 #include <QDir>
+#include <QFile>
 #include <QFileDialog>
 #include <QFuture>
+#include <QSaveFile>
 #include <QList>
 #include <QMenu>
 #include <QMessageBox>
@@ -78,6 +80,8 @@ namespace
 #define SETTINGS_KEY(name) u"AddNewTorrentDialog/" name
     const QString KEY_SAVEPATHHISTORY = SETTINGS_KEY(u"SavePathHistory"_s);
     const QString KEY_DOWNLOADPATHHISTORY = SETTINGS_KEY(u"DownloadPathHistory"_s);
+    const QString KEY_NASFOLDERHISTORY = SETTINGS_KEY(u"NasFolderHistory"_s);
+    const QString DEFAULT_NAS_FOLDER = u"/volume1/video"_s;
 
     // just a shortcut
     inline SettingsStorage *settings()
@@ -235,6 +239,15 @@ AddNewTorrentDialog::AddNewTorrentDialog(const BitTorrent::TorrentDescriptor &to
     });
 
     loadState();
+
+    // NAS destination folder history (custom feature)
+    {
+        QStringList nasHistory = settings()->loadValue<QStringList>(KEY_NASFOLDERHISTORY);
+        if (!nasHistory.contains(DEFAULT_NAS_FOLDER))
+            nasHistory.append(DEFAULT_NAS_FOLDER);
+        m_ui->nasFolderComboBox->addItems(nasHistory);
+        m_ui->nasFolderComboBox->setCurrentIndex(0);
+    }
 
     if (const QByteArray state = m_storeTreeHeaderState; !state.isEmpty())
         m_ui->contentTreeView->header()->restoreState(state);
@@ -480,6 +493,66 @@ void AddNewTorrentDialog::updateCurrentContext()
     }
 }
 
+void AddNewTorrentDialog::saveNasDestination()
+{
+    Q_ASSERT(m_currentContext);
+    if (!m_currentContext) [[unlikely]]
+        return;
+
+    // Map the torrent's infohash(es) to the chosen NAS folder so the
+    // "run on torrent finished" hook (qbt-nas-transfer.sh) knows where to
+    // copy it. An unchecked group means "use the pipeline default".
+    if (!m_ui->groupBoxNasPath->isChecked())
+        return;
+
+    const QString nasFolder = m_ui->nasFolderComboBox->currentText().trimmed();
+    if (nasFolder.isEmpty())
+        return;
+
+    // Remember it in the combo history
+    {
+        QStringList history = settings()->loadValue<QStringList>(KEY_NASFOLDERHISTORY);
+        history.removeAll(nasFolder);
+        history.prepend(nasFolder);
+        settings()->storeValue(KEY_NASFOLDERHISTORY, history.mid(0, 20));
+    }
+
+    const BitTorrent::InfoHash infoHash = m_currentContext->torrentDescr.infoHash();
+    QStringList keys;
+    if (infoHash.v1().isValid())
+        keys.append(infoHash.v1().toString());
+    if (infoHash.v2().isValid())
+        keys.append(infoHash.v2().toString());
+    if (keys.isEmpty())
+        return;
+
+    const QString mapPath = QDir::homePath() + u"/.config/qbt/nas-dest-map.conf"_s;
+    QDir().mkpath(QFileInfo(mapPath).absolutePath());
+
+    // Read existing entries, drop any for these hashes, then re-append.
+    QStringList lines;
+    if (QFile in {mapPath}; in.open(QIODevice::ReadOnly | QIODevice::Text))
+    {
+        while (!in.atEnd())
+        {
+            const QString line = QString::fromUtf8(in.readLine()).trimmed();
+            if (line.isEmpty())
+                continue;
+            const QString hash = line.section(u'=', 0, 0);
+            if (!keys.contains(hash))
+                lines.append(line);
+        }
+    }
+    for (const QString &key : asConst(keys))
+        lines.append(key + u'=' + nasFolder);
+
+    if (QSaveFile out {mapPath}; out.open(QIODevice::WriteOnly | QIODevice::Text))
+    {
+        out.write(lines.join(u'\n').toUtf8() + '\n');
+        out.commit();
+    }
+}
+
 void AddNewTorrentDialog::updateDiskSpaceLabel()
 {
     Q_ASSERT(m_currentContext);
@@ -715,6 +788,7 @@ void AddNewTorrentDialog::accept()
         return;
 
     updateCurrentContext();
+    saveNasDestination();
     emit torrentAccepted(m_currentContext->torrentDescr, m_currentContext->torrentParams);
 
     Preferences::instance()->setAddNewTorrentDialogEnabled(!m_ui->checkBoxNeverShow->isChecked());

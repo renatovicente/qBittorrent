@@ -162,6 +162,34 @@
             </widget>
            </item>
            <item>
+            <widget class="QGroupBox" name="groupBoxNasPath">
+             <property name="title">
+              <string>Copy to NAS folder when complete</string>
+             </property>
+             <property name="checkable">
+              <bool>true</bool>
+             </property>
+             <property name="checked">
+              <bool>true</bool>
+             </property>
+             <layout class="QVBoxLayout" name="verticalLayoutNas">
+              <item>
+               <widget class="QComboBox" name="nasFolderComboBox">
+                <property name="editable">
+                 <bool>true</bool>
+                </property>
+                <property name="insertPolicy">
+                 <enum>QComboBox::InsertPolicy::NoInsert</enum>
+                </property>
+                <property name="toolTip">
+                 <string>Destination directory on the NAS (e.g. /volume1/video/Documentaries). The finished torrent is copied here, then removed locally.</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </widget>
+           </item>
+           <item>
             <widget class="QGroupBox" name="groupBoxSettings">
              <property name="title">
               <string>Torrent options</string>
