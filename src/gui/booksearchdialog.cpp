@@ -143,7 +143,18 @@ BookSearchDialog::BookSearchDialog(QWidget *parent)
     });
 }
 
-BookSearchDialog::~BookSearchDialog() = default;
+BookSearchDialog::~BookSearchDialog()
+{
+    // If a search/download is still running when the dialog is destroyed, the
+    // QProcess destructor would re-emit finished() and our slots would touch
+    // already-freed widgets. Cut the process loose first.
+    if (m_proc)
+    {
+        m_proc->disconnect(this);
+        m_proc->kill();
+        m_proc->waitForFinished(2000);
+    }
+}
 
 QString BookSearchDialog::nodeExecutable()
 {
@@ -202,6 +213,8 @@ void BookSearchDialog::doSearch()
 
 void BookSearchDialog::onSearchFinished(const int /*exitCode*/)
 {
+    if (!m_proc)
+        return;
     m_proc->deleteLater();
     m_proc = nullptr;
     setBusy(false);
@@ -261,6 +274,8 @@ void BookSearchDialog::downloadSelected()
 
 void BookSearchDialog::onDownloadProgress()
 {
+    if (!m_proc)
+        return;
     m_procErr += m_proc->readAllStandardError();
     // parse the last complete "PROGRESS <bytes> <total>" line
     const int nl = m_procErr.lastIndexOf('\n');
@@ -293,6 +308,8 @@ void BookSearchDialog::onDownloadProgress()
 
 void BookSearchDialog::onDownloadFinished(const int /*exitCode*/)
 {
+    if (!m_proc)
+        return;
     m_proc->deleteLater();
     m_proc = nullptr;
     m_progress->setVisible(false);
