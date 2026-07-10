@@ -35,7 +35,7 @@
 namespace
 {
     const QString KEY_NASFOLDERHISTORY = u"BookSearchDialog/NasFolderHistory"_s;
-    const QString DEFAULT_NAS_FOLDER = u"/volume1/video"_s;
+    const QString DEFAULT_NAS_FOLDER = u"/volume1/homes/rvicente/inbox"_s;
 
     enum Column { COL_TITLE, COL_AUTHOR, COL_YEAR, COL_FORMAT, COL_SIZE, COL_COUNT };
 
