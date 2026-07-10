@@ -282,26 +282,41 @@ void BookSearchDialog::onDownloadProgress()
     if (nl < 0)
         return;
     const QList<QByteArray> lines = m_procErr.left(nl).split('\n');
+    int lastProgressIdx = -1;
+    int lastRetryIdx = -1;
     for (int i = lines.size() - 1; i >= 0; --i)
     {
-        const QList<QByteArray> parts = lines.at(i).trimmed().split(' ');
-        if ((parts.size() == 3) && (parts.at(0) == "PROGRESS"))
-        {
-            const qint64 done = parts.at(1).toLongLong();
-            const qint64 total = parts.at(2).toLongLong();
-            if (total > 0)
-            {
-                m_progress->setRange(0, 100);
-                m_progress->setValue(static_cast<int>((done * 100) / total));
-                m_progress->setFormat(u"%1 / %2  (%p%)"_s.arg(
-                        Utils::Misc::friendlyUnit(done), Utils::Misc::friendlyUnit(total)));
-            }
-            else
-            {
-                m_progress->setFormat(Utils::Misc::friendlyUnit(done));
-            }
+        const QByteArray t = lines.at(i).trimmed();
+        if ((lastProgressIdx < 0) && t.startsWith("PROGRESS "))
+            lastProgressIdx = i;
+        if ((lastRetryIdx < 0) && t.startsWith("RETRY "))
+            lastRetryIdx = i;
+        if ((lastProgressIdx >= 0) && (lastRetryIdx >= 0))
             break;
+    }
+    if (lastProgressIdx >= 0)
+    {
+        const QList<QByteArray> parts = lines.at(lastProgressIdx).trimmed().split(' ');
+        const qint64 done = parts.at(1).toLongLong();
+        const qint64 total = parts.at(2).toLongLong();
+        if (total > 0)
+        {
+            m_progress->setRange(0, 100);
+            m_progress->setValue(static_cast<int>((done * 100) / total));
+            m_progress->setFormat(u"%1 / %2  (%p%)"_s.arg(
+                    Utils::Misc::friendlyUnit(done), Utils::Misc::friendlyUnit(total)));
         }
+        else
+        {
+            m_progress->setFormat(Utils::Misc::friendlyUnit(done));
+        }
+    }
+    // A retry that happened after the last progress line means a mirror stalled
+    // and we're reconnecting to another — reflect that instead of a frozen bar.
+    if (lastRetryIdx > lastProgressIdx)
+    {
+        m_progress->setRange(0, 0); // indeterminate while reconnecting
+        m_status->setText(tr("A mirror stalled — trying another..."));
     }
     m_procErr = m_procErr.mid(nl + 1);
 }
