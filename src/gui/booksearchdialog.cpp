@@ -21,6 +21,7 @@
 #include <QLineEdit>
 #include <QMessageBox>
 #include <QProcess>
+#include <QProgressBar>
 #include <QPushButton>
 #include <QStringList>
 #include <QTableWidget>
@@ -103,7 +104,12 @@ BookSearchDialog::BookSearchDialog(QWidget *parent)
     renameRow->addWidget(m_rename);
     layout->addLayout(renameRow);
 
-    // Buttons + status
+    // Progress bar (shown during download) + status
+    m_progress = new QProgressBar(this);
+    m_progress->setTextVisible(true);
+    m_progress->setVisible(false);
+    layout->addWidget(m_progress);
+
     m_status = new QLabel(this);
     layout->addWidget(m_status);
 
@@ -241,17 +247,55 @@ void BookSearchDialog::downloadSelected()
     QDir().mkpath(stagingDir());
     setBusy(true, tr("Downloading \"%1\"...").arg(m_pendingDownloadName));
     m_procOut.clear();
+    m_procErr.clear();
+    m_progress->setRange(0, 0); // indeterminate until first PROGRESS line with a total
+    m_progress->setValue(0);
+    m_progress->setVisible(true);
     m_proc = new QProcess(this);
     connect(m_proc, &QProcess::readyReadStandardOutput, this, [this] { m_procOut += m_proc->readAllStandardOutput(); });
+    connect(m_proc, &QProcess::readyReadStandardError, this, &BookSearchDialog::onDownloadProgress);
     connect(m_proc, qOverload<int, QProcess::ExitStatus>(&QProcess::finished), this
             , [this](const int code, QProcess::ExitStatus) { onDownloadFinished(code); });
     m_proc->start(nodeExecutable(), {backendScript(), u"download"_s, md5, stagingDir()});
+}
+
+void BookSearchDialog::onDownloadProgress()
+{
+    m_procErr += m_proc->readAllStandardError();
+    // parse the last complete "PROGRESS <bytes> <total>" line
+    const int nl = m_procErr.lastIndexOf('\n');
+    if (nl < 0)
+        return;
+    const QList<QByteArray> lines = m_procErr.left(nl).split('\n');
+    for (int i = lines.size() - 1; i >= 0; --i)
+    {
+        const QList<QByteArray> parts = lines.at(i).trimmed().split(' ');
+        if ((parts.size() == 3) && (parts.at(0) == "PROGRESS"))
+        {
+            const qint64 done = parts.at(1).toLongLong();
+            const qint64 total = parts.at(2).toLongLong();
+            if (total > 0)
+            {
+                m_progress->setRange(0, 100);
+                m_progress->setValue(static_cast<int>((done * 100) / total));
+                m_progress->setFormat(u"%1 / %2  (%p%)"_s.arg(
+                        Utils::Misc::friendlyUnit(done), Utils::Misc::friendlyUnit(total)));
+            }
+            else
+            {
+                m_progress->setFormat(Utils::Misc::friendlyUnit(done));
+            }
+            break;
+        }
+    }
+    m_procErr = m_procErr.mid(nl + 1);
 }
 
 void BookSearchDialog::onDownloadFinished(const int /*exitCode*/)
 {
     m_proc->deleteLater();
     m_proc = nullptr;
+    m_progress->setVisible(false);
     setBusy(false);
 
     const QJsonObject obj = QJsonDocument::fromJson(m_procOut).object();

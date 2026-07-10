@@ -12,6 +12,7 @@ class QComboBox;
 class QLabel;
 class QLineEdit;
 class QProcess;
+class QProgressBar;
 class QPushButton;
 class QTableWidget;
 
@@ -29,6 +30,7 @@ private:
     void onSearchFinished(int exitCode);
     void downloadSelected();
     void onDownloadFinished(int exitCode);
+    void onDownloadProgress();
     void setBusy(bool busy, const QString &message = {});
     static QString nodeExecutable();
     static QString backendScript();
@@ -42,9 +44,11 @@ private:
     QLineEdit *m_rename = nullptr;
     QPushButton *m_downloadBtn = nullptr;
     QLabel *m_status = nullptr;
+    QProgressBar *m_progress = nullptr;
 
     QProcess *m_proc = nullptr;
     QByteArray m_procOut;
+    QByteArray m_procErr;
     QString m_pendingDownloadName; // label for the download in progress
     QString m_pendingAuthor;
     QString m_pendingFormat;
